@@ -49,7 +49,7 @@ def BondTwist(edge, graph, relcoord, cell):
 
 
 def hook4(lattice):
-    lattice.logger.info("Hook4: Ring test.")
+    lattice.logger.info("Hook4: Bond twists.")
     cellmat = lattice.repcell.mat * 10 # in AA
     positions = lattice.reppositions
     graph = nx.Graph(lattice.spacegraph) #undirected
