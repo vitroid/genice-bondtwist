@@ -64,7 +64,9 @@ def hook4(lattice):
         a,b = edge
         d = positions[b] - positions[a]
         d -= np.floor(d + 0.5)
-        center = np.dot( positions[a] + d/2, cellmat )
+        center = positions[a] + d/2
+        center -= np.floor(center)
+        center = np.dot( center, cellmat )
         print("{0} {1} {2:.4f} {3:.4f} {4:.4f} {5:.4f}".format(a,b,*center, twist))
     print("-1 -1 0 0 0 0")
     lattice.logger.info("Hook4: end.")
