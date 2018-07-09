@@ -42,7 +42,7 @@ def BondTwist(edge, graph, relcoord, cell):
                 sum += math.sin(angle*3)
                 n += 1
     if n == 0:
-        return 0.0
+        return 0
     op = sum / n
     return op
 
