@@ -1,12 +1,16 @@
 # genice-svg
 
-A [GenIce](https://github.com/vitroid/GenIce) plugin to analize bond twists.
+A [GenIce](https://github.com/vitroid/GenIce) plugin to analyze bond twists.
 
 ## Requirements
 
 * [GenIce](https://github.com/vitroid/GenIce) >=0.23.
 
-## Installation
+## Installation from PyPI
+
+    % pip install genice-bondtwist
+
+## Manual Installation
 
 ### System-wide installation
 
@@ -14,11 +18,11 @@ A [GenIce](https://github.com/vitroid/GenIce) plugin to analize bond twists.
 
 ### Private installation
 
-Copy the files in genice_svg/formats/ into your local formats folder of GenIce.
+Copy the files in genice_bondtwist/formats/ into your local formats folder of GenIce.
 
 ## Usage
 
-	% genice T2 -f bondtwist > T2.btwi
+	% genice T2 -f bondtwist > T2.btwc
 
 ## Test in place
 

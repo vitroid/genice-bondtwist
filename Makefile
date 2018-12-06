@@ -1,7 +1,10 @@
 .DELETE_ON_ERROR:
-test: T2.btwi
-T2.btwi: genice_bondtwist/formats/bondtwist.py Makefile
-	genice T2 -f bondtwist > $@
+test: 1h.btwc.test
+%.test:
+	make $*
+	diff $* ref/$*
+1h.btwc: genice_bondtwist/formats/bondtwist.py Makefile
+	genice 1h -r 2 2 2 -f bondtwist > $@
 check:
 	./setup.py check
 install:
@@ -9,6 +12,6 @@ install:
 pypi: check
 	./setup.py sdist bdist_wheel upload
 clean:
-	-rm $(ALL) *~ */*~ *svg
+	-rm $(ALL) *~ */*~ *.btwc
 	-rm -rf build dist *.egg-info
 	-find . -name __pycache__ | xargs rm -rf
