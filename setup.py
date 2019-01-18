@@ -38,8 +38,17 @@ setup(
     ],
     
     entry_points = {
-        'genice_format_hook4': [
-            'bondtwist = genice_bondtwist.formats.bondtwist:hook4',
+        'genice_format_hook1': [
+            'bondtwist3 = genice_bondtwist.formats.bondtwist3:hook1',
+        ],
+        'genice_format_hook2': [
+            'bondtwist  = genice_bondtwist.formats.bondtwist:hook2',
+            'bondtwist2 = genice_bondtwist.formats.bondtwist2:hook2',
+        ],
+        'genice_format_hook0': [
+            'bondtwist  = genice_bondtwist.formats.bondtwist:hook0',
+            'bondtwist2 = genice_bondtwist.formats.bondtwist2:hook0',
+            'bondtwist3 = genice_bondtwist.formats.bondtwist3:hook0',
         ],
     },
     install_requires=['genice>=0.23'],

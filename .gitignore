@@ -2,3 +2,13 @@
 
 */@
 @
+
+genice_bondtwist\.egg-info/
+
+dist/
+build/
+/*.yap
+
+/*.btc3
+
+/*.btwc
