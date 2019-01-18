@@ -54,20 +54,6 @@ class BondTwist():
                     sine = np.dot(np.cross(vecs[i],vecs[j]), pivot)
                     cosine = np.dot(vecs[i],vecs[j])
                     angle = atan2(sine,cosine)# * 180 / pi
-                    degree = angle*180/pi
-                    if 29 < degree < 31:
-                        logger.debug("Angle, norm, cosine: {0} {1} {2}".format(degree, (sine**2+cosine**2)**0.5, cosine))
-                        logger.debug((i,a,b,j))
-                        d = self.relcoord[a] - self.relcoord[i]
-                        d-= np.floor(d+0.5)
-                        logger.debug(np.linalg.norm(d))
-                        d = self.relcoord[a] - self.relcoord[b]
-                        d-= np.floor(d+0.5)
-                        logger.debug(np.linalg.norm(d))
-                        d = self.relcoord[j] - self.relcoord[b]
-                        d-= np.floor(d+0.5)
-                        logger.debug(np.linalg.norm(d))
-                        
                     sum += cmath.exp(angle*3j)
                     n += 1
         if n == 0:
