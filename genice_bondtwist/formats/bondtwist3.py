@@ -16,6 +16,7 @@ import colorsys
 
 import pairlist as pl
 import yaplotlib as yp
+from genice_bondtwist.formats.bondtwist  import hook0
 from genice_bondtwist.formats.bondtwist2 import BondTwist2
 
 
@@ -89,33 +90,15 @@ def hook1(lattice):
     positions = lattice.reppositions
     twist = BondTwist3(positions, cell, Rcutoff=0.45)
     twist.graph = twist.proximity
-    if lattice.bt_yaplot:
+    if lattice.bt_mode == "yaplot":
         print(twist.yaplot())
-    else:
+    elif lattice.bt_mode == "svg":
+        print(twist.svg(lattice.bt_rotmat))
+    else: # "file"
         print(lattice.repcell.serialize_BOX9(), end="")
         print(twist.serialize("@BTC3"), end="")
     lattice.logger.info("Hook1: end.")
 
-
-def hook0(lattice, arg):
-    lattice.logger.info("Hook0: ArgParser.")
-    lattice.bt_yaplot = False
-    if arg == "":
-        pass
-        #This is default.  No reshaping applied.
-    else:
-        args = arg.split(":")
-        for a in args:
-            if a.find("=") >= 0:
-                key, value = a.split("=")
-                lattice.logger.info("Option with arguments: {0} := {1}".format(key,value))
-            else:
-                lattice.logger.info("Flags: {0}".format(a))
-                if a == "yaplot":
-                    lattice.bt_yaplot = True
-                else:
-                    assert False, "Wrong options."
-    lattice.logger.info("Hook0: end.")
 
     
 hooks = {0:hook0, 1:hook1}

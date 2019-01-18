@@ -17,7 +17,7 @@ import colorsys
 import pairlist as pl
 import yaplotlib as yp
 
-from genice_bondtwist.formats.bondtwist import BondTwist
+from genice_bondtwist.formats.bondtwist import BondTwist, hook0
 
 
 class BondTwist2(BondTwist):
@@ -100,33 +100,15 @@ def hook2(lattice):
     twist = BondTwist2(positions, cell, Rcutoff=0.45)
     grid = pl.determine_grid(cell, 0.3)
     twist.graph = nx.Graph([edge for edge in pl.pairs_fine(positions, 0.3,cell,grid,distance=False)])
-    if lattice.bt_yaplot:
+    if lattice.bt_mode == "yaplot":
         print(twist.yaplot())
+    elif lattice.bt_mode == "svg":
+        print(twist.svg(lattice.bt_rotmat))
     else:
         print(lattice.repcell.serialize_BOX9(), end="")
         print(twist.serialize("@BTC2"), end="")
     lattice.logger.info("Hook2: end.")
 
-
-def hook0(lattice, arg):
-    lattice.logger.info("Hook0: ArgParser.")
-    lattice.bt_yaplot = False
-    if arg == "":
-        pass
-        #This is default.  No reshaping applied.
-    else:
-        args = arg.split(":")
-        for a in args:
-            if a.find("=") >= 0:
-                key, value = a.split("=")
-                lattice.logger.info("Option with arguments: {0} := {1}".format(key,value))
-            else:
-                lattice.logger.info("Flags: {0}".format(a))
-                if a == "yaplot":
-                    lattice.bt_yaplot = True
-                else:
-                    assert False, "Wrong options."
-    lattice.logger.info("Hook0: end.")
 
     
 hooks = {0:hook0, 2:hook2}

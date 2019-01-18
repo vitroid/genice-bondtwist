@@ -5,7 +5,7 @@ Bond twist
 Matsumoto, M., Yagasaki, T. & Tanaka, H. Chiral Ordering in Supercooled Liquid Water and Amorphous Ice. Phys. Rev. Lett. 115, 197801 (2015).
 """
 
-import math
+from math import atan2, sin, cos, pi
 import cmath
 import colorsys
 import logging
@@ -13,6 +13,9 @@ import logging
 import numpy as np
 import networkx as nx
 import yaplotlib as yp
+
+from genice_svg.formats.svg import Render, draw_cell
+
 
 class BondTwist():
     def __init__(self, graph, relcoord, cell):
@@ -50,8 +53,8 @@ class BondTwist():
                     # print(np.dot(vectors[j],pivot))
                     sine = np.dot(np.cross(vecs[i],vecs[j]), pivot)
                     cosine = np.dot(vecs[i],vecs[j])
-                    angle = math.atan2(sine,cosine)# * 180 / math.pi
-                    degree = angle*180/math.pi
+                    angle = atan2(sine,cosine)# * 180 / pi
+                    degree = angle*180/pi
                     if 29 < degree < 31:
                         logger.debug("Angle, norm, cosine: {0} {1} {2}".format(degree, (sine**2+cosine**2)**0.5, cosine))
                         logger.debug((i,a,b,j))
@@ -84,7 +87,7 @@ class BondTwist():
             yield a,b,center,twist
 
     def serialize(self, tag):
-        s = "# i, j, center, of, bond, bond-twist"\n
+        s = "# i, j, center, of, bond, bond-twist\n"
         s += "{0}\n".format(tag)
         s += self.relcoord.shape[0].__str__()+"\n"
         for a,b,center,twist in self.iter():
@@ -92,7 +95,7 @@ class BondTwist():
         s += "-1 -1 0 0 0 0 0\n"
         return s
 
-    def yaplot(self, Rcutoff=0.3):
+    def yaplot(self):
         maxcir = 16
         maxrad = 6
         # 16x6=96 color variations
@@ -102,7 +105,7 @@ class BondTwist():
                 angle = cir*360/maxcir
                 hue = ((angle - 60 + 360) / 360) % 1.0
                 bri = rad / (maxrad-1)
-                sat = math.sin(angle*math.pi/180)**2
+                sat = sin(angle*pi/180)**2
                 logging.debug((angle,sat,bri))
                 r,g,b = colorsys.hsv_to_rgb(hue, sat, bri)
                 n = cir*maxrad + rad + 3
@@ -118,7 +121,7 @@ class BondTwist():
             bpos = apos + np.dot(d, self.cell)
             cosine = twist.real
             sine   = twist.imag
-            angle = math.atan2(sine,cosine) * 180 / math.pi
+            angle = atan2(sine,cosine) * 180 / pi
             if angle < 0:
                 angle += 360
             cir = int(angle*maxcir/360+0.5)
@@ -136,19 +139,60 @@ class BondTwist():
         return s
 
 
+    def svg(self, rotmat):
+        Rsphere = 0.03  # nm
+        Rcyl    = 0.02  # nm
+        RR      = (Rsphere**2 - Rcyl**2)**0.5
+        prims = []
+        proj = np.dot(self.cell, rotmat)
+        xmin, xmax, ymin, ymax = draw_cell(prims, proj)
+        for a,b in self.graph.edges():
+            twist = self._bondtwist((a,b))
+            if twist == 0:
+                # not an appropriate pair
+                continue
+            d = self.relcoord[b] - self.relcoord[a]
+            d -= np.floor(d + 0.5)
+            apos = np.dot(self.relcoord[a], proj)
+            dp = np.dot(d, proj)
+            bpos = apos + dp
+            center = apos + dp/2
+            o = dp / np.linalg.norm(dp)
+            o *= RR
+            
+            #Color setting
+            cosine = twist.real
+            sine   = twist.imag
+            angle = atan2(sine,cosine) * 180 / pi
+            rad = sine**2 + cosine**2
+            hue = ((angle - 60 + 360) / 360) % 1.0
+            bri = rad
+            sat = sin(angle*pi/180)**2
+            r,g,b = colorsys.hsv_to_rgb(hue, sat, bri)
+            colorcode = "#{0:02x}{1:02x}{2:02x}".format(int(r*255),int(g*255),int(b*255))
+            prims.append([center, "L", apos+o, bpos-o,Rcyl, {"fill":colorcode}])
+        for v in self.relcoord:
+            prims.append([np.dot(v, proj),"C",Rsphere, {"fill":"#fff"}]) #circle
+        return Render(prims, Rsphere, shadow=False,
+                   topleft=np.array((xmin,ymin)),
+                   size=(xmax-xmin, ymax-ymin))
+
+    
+
 def hook2(lattice):
     lattice.logger.info("Hook2: Complex bond twists.")
     cell = lattice.repcell 
-    print(cell.serialize_BOX9(), end="")
 
     positions = lattice.reppositions
     graph = nx.Graph(lattice.graph) #undirected
 
-    print("# i, j, center, of, bond, bond-twist")
     twist = BondTwist(graph, positions, cell.mat)
-    if lattice.bt_yaplot:
+    if lattice.bt_mode == "yaplot":
         print(twist.yaplot())
-    else:
+    elif lattice.bt_mode == "svg":
+        print(twist.svg(lattice.bt_rotmat))
+    else: # "file"
+        print(cell.serialize_BOX9(), end="")
         print(twist.serialize("@BTWC"), end="")
     lattice.logger.info("Hook2: end.")
 
@@ -156,7 +200,8 @@ def hook2(lattice):
 
 def hook0(lattice, arg):
     lattice.logger.info("Hook0: ArgParser.")
-    lattice.bt_yaplot = False
+    lattice.bt_mode = "file"
+    lattice.bt_rotmat = np.array([[1., 0, 0], [0, 1, 0], [0, 0, 1]])
     if arg == "":
         pass
         #This is default.  No reshaping applied.
@@ -166,10 +211,33 @@ def hook0(lattice, arg):
             if a.find("=") >= 0:
                 key, value = a.split("=")
                 lattice.logger.info("Option with arguments: {0} := {1}".format(key,value))
+                if key == "rotmat":
+                    value = re.search(r"\[([-0-9,.]+)\]", value).group(1)
+                    lattice.bt_rotmat = np.array([float(x) for x in value.split(",")]).reshape(3,3)
+                elif key == "rotatex":
+                    value = float(value)*pi/180
+                    cosx = cos(value)
+                    sinx = sin(value)
+                    R = np.array([[1, 0, 0], [0, cosx, sinx], [0,-sinx, cosx]])
+                    lattice.bt_rotmat = np.dot(lattice.bt_rotmat, R)
+                elif key == "rotatey":
+                    value = float(value)*pi/180
+                    cosx = cos(value)
+                    sinx = sin(value)
+                    R = np.array([[cosx, 0, -sinx], [0, 1, 0], [sinx, 0, cosx]])
+                    lattice.bt_rotmat = np.dot(lattice.bt_rotmat, R)
+                elif key == "rotatez":
+                    value = float(value)*pi/180
+                    cosx = cos(value)
+                    sinx = sin(value)
+                    R = np.array([[cosx, sinx, 0], [-sinx, cosx, 0], [0, 0, 1]])
+                    lattice.bt_rotmat = np.dot(lattice.bt_rotmat, R)
             else:
                 lattice.logger.info("Flags: {0}".format(a))
                 if a == "yaplot":
-                    lattice.bt_yaplot = True
+                    lattice.bt_mode = "yaplot"
+                elif a == "svg":
+                    lattice.bt_mode = "svg"
                 else:
                     assert False, "Wrong options."
     lattice.logger.info("Hook0: end.")
