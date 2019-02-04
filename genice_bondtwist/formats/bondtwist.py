@@ -163,6 +163,99 @@ class BondTwist():
                    topleft=np.array((xmin,ymin)),
                    size=(xmax-xmin, ymax-ymin))
 
+
+
+    def svg2(self, rotmat, phasefiles):
+        #
+        # Twist order parameter to distinguish phases.
+        #
+        logger = logging.getLogger()
+
+        pxF = dict()
+        phases = list(phasefiles)
+        logger.info(phases)
+        X = []
+        for phase in phases:
+            pxF[phase] = np.load(open(phasefiles[phase], "rb"))
+            X.append(pxF[phase].reshape([1600,]))
+        X = np.array(X).T
+
+        chirs = []
+        chiis = []
+        for a,b in self.graph.edges():
+            twist = self._bondtwist((a,b))
+            if twist == 0:
+                continue
+            chirs.append(twist.real)
+            chiis.append(twist.imag)
+
+        #pX: p(chi)
+        pX = np.histogram2d(chirs, chiis,
+                            bins=(40,40),
+                            range=[[-1.,1.],[-1.,1.]],
+                            normed=True)
+        Y = pX[0].reshape([1600,])
+        from sklearn import linear_model
+        reg = linear_model.LinearRegression(fit_intercept=False)
+        reg.fit(X,Y)
+
+        # pF : p(F)
+
+        pF = dict()
+        for i, phase in enumerate(phases):
+            pF[phase] = reg.coef_[i]
+
+        pFx = dict()
+        for phase in phases:
+            pFx[phase] = pxF[phase]*pF[phase] / pX[0]
+        pFx["ice"] = pFx["1c"] + pFx["1h"]
+
+        Rsphere = 0.03  # nm
+        Rcyl    = 0.02  # nm
+        RR      = (Rsphere**2 - Rcyl**2)**0.5
+        prims = []
+        proj = np.dot(self.cell, rotmat)
+        xmin, xmax, ymin, ymax = draw_cell(prims, proj)
+        for a,b in self.graph.edges():
+            twist = self._bondtwist((a,b))
+            if twist == 0:
+                # not an appropriate pair
+                continue
+            d = self.relcoord[b] - self.relcoord[a]
+            d -= np.floor(d + 0.5)
+            apos = np.dot(self.relcoord[a], proj)
+            dp = np.dot(d, proj)
+            bpos = apos + dp
+            center = apos + dp/2
+            o = dp / np.linalg.norm(dp)
+            o *= RR
+            
+            #Color setting
+            bin = int(twist.real*20+20), int(twist.imag*20+20)
+            green = pFx["HDL"][bin]
+            blue  = pFx["LDL"][bin]
+            red   = pFx["ice"][bin]
+            logger.debug((red,green,blue))
+            if green < 0:
+                green = 0
+            if green > 1:
+                green = 1
+            if red < 0:
+                red = 0
+            if red > 1:
+                red = 1
+            if blue < 0:
+                blue = 0
+            if blue > 1:
+                blue = 1
+            colorcode = "#{0:02x}{1:02x}{2:02x}".format(int(red*255),int(green*255),int(blue*255))
+            prims.append([center, "L", apos+o, bpos-o,Rcyl, {"fill":colorcode}])
+        for v in self.relcoord:
+            prims.append([np.dot(v, proj),"C",Rsphere, {"fill":"#fff"}]) #circle
+        return Render(prims, Rsphere, shadow=False,
+                   topleft=np.array((xmin,ymin)),
+                   size=(xmax-xmin, ymax-ymin))
+
     
 
 def hook2(lattice):
@@ -177,6 +270,8 @@ def hook2(lattice):
         print(twist.yaplot())
     elif lattice.bt_mode == "svg":
         print(twist.svg(lattice.bt_rotmat))
+    elif lattice.bt_mode == "svg2":
+        print(twist.svg2(lattice.bt_rotmat, lattice.bt_phases))
     else: # "file"
         print(cell.serialize_BOX9(), end="")
         print(twist.serialize("@BTWC"), end="")
@@ -188,6 +283,11 @@ def hook0(lattice, arg):
     lattice.logger.info("Hook0: ArgParser.")
     lattice.bt_mode = "file"
     lattice.bt_rotmat = np.array([[1., 0, 0], [0, 1, 0], [0, 0, 1]])
+    lattice.bt_phases = {"1h": "1h.4P2K.250K.pkl",
+                         "1c": "1c.4P2K.250K.pkl",
+                         "LDL": "LDL.ST2.240K0.88.pkl",
+                         "HDL": "HDL.ST2.240K1.04.pkl"}
+
     if arg == "":
         pass
         #This is default.  No reshaping applied.
@@ -218,12 +318,19 @@ def hook0(lattice, arg):
                     sinx = sin(value)
                     R = np.array([[cosx, sinx, 0], [-sinx, cosx, 0], [0, 0, 1]])
                     lattice.bt_rotmat = np.dot(lattice.bt_rotmat, R)
+                else:
+                    #may be the file names for phases. just record them.
+                    lattice.bt_phases[key] = value
+                    if value == "":
+                        del lattice.bt_phases[key]
             else:
                 lattice.logger.info("Flags: {0}".format(a))
                 if a == "yaplot":
                     lattice.bt_mode = "yaplot"
                 elif a == "svg":
                     lattice.bt_mode = "svg"
+                elif a == "svg2":
+                    lattice.bt_mode = "svg2"
                 else:
                     assert False, "Wrong options."
     lattice.logger.info("Hook0: end.")
