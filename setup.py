@@ -51,7 +51,7 @@ setup(
             'bondtwist2 = genice_bondtwist.formats.bondtwist2:hook2',
         ],
     },
-    install_requires=['genice>=0.23', 'genice-svg'],
+    install_requires=['genice>=0.23', 'genice-svg', 'twist-op'],
 
     license='MIT',
 )
