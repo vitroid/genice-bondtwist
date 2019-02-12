@@ -33,6 +33,6 @@ install:
 pypi: check
 	./setup.py sdist bdist_wheel upload
 clean:
-	-rm $(ALL) *~ */*~ *.btwc
+	-rm $(ALL) *~ */*~ *.btwc *.btc2 *.btc3
 	-rm -rf build dist *.egg-info
 	-find . -name __pycache__ | xargs rm -rf

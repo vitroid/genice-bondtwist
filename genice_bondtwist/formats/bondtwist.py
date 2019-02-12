@@ -17,7 +17,7 @@ import networkx as nx
 import yaplotlib as yp
 
 from genice_svg.formats.svg import Render, draw_cell
-from png import Render as pRender
+from genice_svg.formats.png import Render as pRender
 import twist_op as top
 
 class BondTwist():
