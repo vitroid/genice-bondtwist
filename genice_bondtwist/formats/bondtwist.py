@@ -100,9 +100,9 @@ class BondTwist():
         return s
 
 
-    def svg(self, rotmat, render=Render):
-        Rsphere = 0.03  # nm
-        Rcyl    = 0.02  # nm
+    def svg(self, rotmat, render=Render, shadow=None):
+        Rsphere = 0.04  # nm
+        Rcyl    = 0.03  # nm
         RR      = (Rsphere**2 - Rcyl**2)**0.5
         prims = []
         proj = np.dot(self.cell, rotmat)
@@ -130,13 +130,13 @@ class BondTwist():
             prims.append([center, "L", apos+o, bpos-o,Rcyl, {"fill":colorcode}])
         for v in self.relcoord:
             prims.append([np.dot(v, proj),"C",Rsphere, {"fill":"#fff"}]) #circle
-        return render(prims, Rsphere, shadow=False,
+        return render(prims, Rsphere, shadow=shadow,
                    topleft=np.array((xmin,ymin)),
                    size=(xmax-xmin, ymax-ymin))
 
 
 
-    def svg2(self, rotmat, phasefiles, render=Render):
+    def svg2(self, rotmat, phasefiles, render=Render, shadow=None):
         #
         # Twist order parameter to distinguish phases.
         #
@@ -147,7 +147,7 @@ class BondTwist():
         logger.info(phases)
         X = []
         for phase in phases:
-            pxF[phase] = np.load(open(phasefiles[phase], "rb"))
+            pxF[phase] = np.loadtxt(open(phasefiles[phase], "r"))
             X.append(pxF[phase].reshape([1600,]))
         X = np.array(X).T
 
@@ -178,8 +178,8 @@ class BondTwist():
             pFx[phase] = pxF[phase]*pF[phase] / pX[0]
         pFx["ice"] = pFx["1c"] + pFx["1h"]
 
-        Rsphere = 0.03  # nm
-        Rcyl    = 0.02  # nm
+        Rsphere = 0.04  # nm
+        Rcyl    = 0.03  # nm
         RR      = (Rsphere**2 - Rcyl**2)**0.5
         prims = []
         proj = np.dot(self.cell, rotmat)
@@ -193,13 +193,16 @@ class BondTwist():
             bpos = apos + dp
             o = dp / np.linalg.norm(dp)
             o *= RR
+            center = apos + dp/2
             
             #Color setting
-            bin = int(twist.real*20+20), int(twist.imag*20+20)
+            bin = int(twist.real*19.999+20), int(twist.imag*19.999+20)
+            if pX[0][bin] == 0.0:
+                continue
             green = pFx["HDL"][bin]
             blue  = pFx["LDL"][bin]
             red   = pFx["ice"][bin]
-            logger.debug((red,green,blue))
+            logger.debug((red,green,blue,bin,pX[0][bin]))
             if green < 0:
                 green = 0
             if green > 1:
@@ -216,12 +219,12 @@ class BondTwist():
             prims.append([center, "L", apos+o, bpos-o,Rcyl, {"fill":colorcode}])
         for v in self.relcoord:
             prims.append([np.dot(v, proj),"C",Rsphere, {"fill":"#fff"}]) #circle
-        return render(prims, Rsphere, shadow=False,
+        return render(prims, Rsphere, shadow=shadow,
                    topleft=np.array((xmin,ymin)),
                    size=(xmax-xmin, ymax-ymin))
 
 
-    def svg3(self, rotmat, render=Render):
+    def svg3(self, rotmat, render=Render, shadow=None):
         #
         # Twist order parameter to distinguish phases.
         # Simple criteria.
@@ -229,8 +232,8 @@ class BondTwist():
         logger = logging.getLogger()
         anglerange = 20
         
-        Rsphere = 0.03  # nm
-        Rcyl    = 0.02  # nm
+        Rsphere = 0.04  # nm
+        Rcyl    = 0.03  # nm
         RR      = (Rsphere**2 - Rcyl**2)**0.5
         prims = []
         proj = np.dot(self.cell, rotmat)
@@ -244,6 +247,7 @@ class BondTwist():
             bpos = apos + dp
             o = dp / np.linalg.norm(dp)
             o *= RR
+            center = apos + dp/2
             
             #Color setting
             cosine, sine  = twist.real, twist.imag
@@ -252,24 +256,24 @@ class BondTwist():
             red = 0
             green = 0
             blue = 0
-            if radius > 0.7:
-                if (-anglerange < angle <anglerange ) or (angle < -180+anglerange) or (180-anglerange < angle):
-                    red = 1
-                else:
+            if radius > 0.65:
+                if -0.85 < twist.real < +0.85:
                     blue = 1
+                else:
+                    red = 1
             else:
                 green = 1
             colorcode = "#{0:02x}{1:02x}{2:02x}".format(int(red*255),int(green*255),int(blue*255))
             prims.append([center, "L", apos+o, bpos-o,Rcyl, {"fill":colorcode}])
         for v in self.relcoord:
             prims.append([np.dot(v, proj),"C",Rsphere, {"fill":"#fff"}]) #circle
-        return render(prims, Rsphere, shadow=False,
+        return render(prims, Rsphere, shadow=shadow,
                    topleft=np.array((xmin,ymin)),
                    size=(xmax-xmin, ymax-ymin))
 
 
     
-    def svg4(self, rotmat, phasefiles, render=Render):
+    def svg4(self, rotmat, phasefiles, render=Render, shadow=None):
         #
         # Twist order parameter to distinguish phases.
         # Color only when likelihood > 0.5.
@@ -281,7 +285,7 @@ class BondTwist():
         logger.info(phases)
         X = []
         for phase in phases:
-            pxF[phase] = np.load(open(phasefiles[phase], "rb"))
+            pxF[phase] = np.loadtxt(open(phasefiles[phase], "r"))
             X.append(pxF[phase].reshape([1600,]))
         X = np.array(X).T
 
@@ -313,8 +317,8 @@ class BondTwist():
         pFx["ice"] = pFx["1c"] + pFx["1h"]
         logger.info("Done.")
 
-        Rsphere = 0.03  # nm
-        Rcyl    = 0.02  # nm
+        Rsphere = 0.04  # nm
+        Rcyl    = 0.03  # nm
         RR      = (Rsphere**2 - Rcyl**2)**0.5
         prims = []
         proj = np.dot(self.cell, rotmat)
@@ -328,9 +332,10 @@ class BondTwist():
             bpos = apos + dp
             o = dp / np.linalg.norm(dp)
             o *= RR
+            center = apos + dp/2
             
             #Color setting
-            bin = int(twist.real*20+20), int(twist.imag*20+20)
+            bin = int(twist.real*19.999+20), int(twist.imag*19.999+20)
             green = pFx["HDL"][bin]
             blue  = pFx["LDL"][bin]
             red   = pFx["ice"][bin]
@@ -342,20 +347,20 @@ class BondTwist():
             elif blue > 0.5:
                 blue = 1
                 red = 0.0
-                green = 0.3
+                green = 0
             elif red > 0.5:
                 red = 1
                 blue = 0
                 green = 0
             else:
-                green = 0
-                blue = 0
-                red = 0
+                green = 1
+                blue = 1
+                red = 1
             colorcode = "#{0:02x}{1:02x}{2:02x}".format(int(red*255),int(green*255),int(blue*255))
             prims.append([center, "L", apos+o, bpos-o,Rcyl, {"fill":colorcode}])
         for v in self.relcoord:
             prims.append([np.dot(v, proj),"C",Rsphere, {"fill":"#fff"}]) #circle
-        return render(prims, Rsphere, shadow=False,
+        return render(prims, Rsphere, shadow=shadow,
                    topleft=np.array((xmin,ymin)),
                    size=(xmax-xmin, ymax-ymin))
     
@@ -380,13 +385,13 @@ def hook2(lattice):
         print(twist.svg4(lattice.bt_rotmat, lattice.bt_phases))
     elif "png" in lattice.bt_mode:
         if lattice.bt_mode == "png":
-            image = twist.svg(lattice.bt_rotmat, render=pRender)
+            image = twist.svg(lattice.bt_rotmat, render=pRender, shadow=lattice.bt_shadow)
         elif lattice.bt_mode == "png2":
-            image = twist.svg2(lattice.bt_rotmat, lattice.bt_phases, render=pRender)
+            image = twist.svg2(lattice.bt_rotmat, lattice.bt_phases, render=pRender, shadow=lattice.bt_shadow)
         elif lattice.bt_mode == "png3":
-            image = twist.svg3(lattice.bt_rotmat, render=pRender)
+            image = twist.svg3(lattice.bt_rotmat, render=pRender, shadow=lattice.bt_shadow)
         elif lattice.bt_mode == "png4":
-            image = twist.svg4(lattice.bt_rotmat, lattice.bt_phases, render=pRender)
+            image = twist.svg4(lattice.bt_rotmat, lattice.bt_phases, render=pRender, shadow=lattice.bt_shadow)
         imgByteArr = io.BytesIO()
         image.save(imgByteArr, format='PNG')
         imgByteArr = imgByteArr.getvalue()
@@ -401,11 +406,12 @@ def hook2(lattice):
 def hook0(lattice, arg):
     lattice.logger.info("Hook0: ArgParser.")
     lattice.bt_mode = "file"
+    lattice.bt_shadow = None
     lattice.bt_rotmat = np.array([[1., 0, 0], [0, 1, 0], [0, 0, 1]])
-    lattice.bt_phases = {"1h": "1h.4P2K.250K.pkl",
-                         "1c": "1c.4P2K.250K.pkl",
-                         "LDL": "LDL.ST2.240K0.88.pkl",
-                         "HDL": "HDL.ST2.240K1.04.pkl"}
+    lattice.bt_phases = {"1h": "IhST2.twhist",
+                         "1c": "IcST2.twhist",
+                         "LDL": "LDLST2.twhist",
+                         "HDL": "HDLST2.twhist"}
 
     if arg == "":
         pass
@@ -446,6 +452,8 @@ def hook0(lattice, arg):
                 lattice.logger.info("Flags: {0}".format(a))
                 if a == "yaplot":
                     lattice.bt_mode = "yaplot"
+                elif a == "shadow":
+                    lattice.bt_shadow = "#4441"
                 elif a in ("svg", "svg2", "svg3", "svg4", "png", "png2", "png3", "png4"):
                     lattice.bt_mode = a
                 else:
