@@ -38,20 +38,13 @@ setup(
     ],
     
     entry_points = {
-        'genice_format_hook0': [
-            'bondtwist  = genice_bondtwist.formats.bondtwist:hook0',
-            'bondtwist2 = genice_bondtwist.formats.bondtwist2:hook0',
-            'bondtwist3 = genice_bondtwist.formats.bondtwist3:hook0',
-        ],
-        'genice_format_hook1': [
-            'bondtwist3 = genice_bondtwist.formats.bondtwist3:hook1',
-        ],
-        'genice_format_hook2': [
-            'bondtwist  = genice_bondtwist.formats.bondtwist:hook2',
-            'bondtwist2 = genice_bondtwist.formats.bondtwist2:hook2',
+        'genice_format': [
+            'bondtwist  = genice_bondtwist.formats.bondtwist',
+            'bondtwist2 = genice_bondtwist.formats.bondtwist2',
+            'bondtwist3 = genice_bondtwist.formats.bondtwist3',
         ],
     },
-    install_requires=['genice>=0.23', 'genice-svg', 'twist-op'],
+    install_requires=['genice>=0.25', 'genice-svg>=0.4', 'twist-op'],
 
     license='MIT',
 )

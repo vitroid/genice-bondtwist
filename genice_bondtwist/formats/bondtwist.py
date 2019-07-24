@@ -16,8 +16,9 @@ import numpy as np
 import networkx as nx
 import yaplotlib as yp
 
-from genice_svg.formats.svg import Render, draw_cell
-from genice_svg.formats.png import Render as pRender
+from genice_svg.hooks import draw_cell
+from genice_svg.render_png import Render as pRender
+from genice_svg.render_svg import Render as sRender
 import twist_op as top
 
 class BondTwist():
@@ -100,7 +101,7 @@ class BondTwist():
         return s
 
 
-    def svg(self, rotmat, render=Render, shadow=None):
+    def svg(self, rotmat, render=sRender, shadow=None):
         Rsphere = 0.04  # nm
         Rcyl    = 0.03  # nm
         RR      = (Rsphere**2 - Rcyl**2)**0.5
@@ -136,7 +137,7 @@ class BondTwist():
 
 
 
-    def svg2(self, rotmat, phasefiles, render=Render, shadow=None):
+    def svg2(self, rotmat, phasefiles, render=sRender, shadow=None):
         #
         # Twist order parameter to distinguish phases.
         #
@@ -224,7 +225,7 @@ class BondTwist():
                    size=(xmax-xmin, ymax-ymin))
 
 
-    def svg3(self, rotmat, render=Render, shadow=None):
+    def svg3(self, rotmat, render=sRender, shadow=None):
         #
         # Twist order parameter to distinguish phases.
         # Simple criteria.
@@ -273,7 +274,7 @@ class BondTwist():
 
 
     
-    def svg4(self, rotmat, phasefiles, render=Render, shadow=None):
+    def svg4(self, rotmat, phasefiles, render=sRender, shadow=None):
         #
         # Twist order parameter to distinguish phases.
         # Color only when likelihood > 0.5.
